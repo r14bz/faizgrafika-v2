@@ -307,7 +307,7 @@
                 <span class="text-xs font-medium text-gray-600">Jumlah</span>
                 <div class="flex items-center gap-2">
                     <button onclick="adjustVariantQty(-1)" class="w-7 h-7 rounded-full border text-gray-600 hover:bg-gray-50">−</button>
-                    <span id="variant-modal-qty" class="w-8 text-center font-bold text-sm">1</span>
+                    <input type="number" id="variant-modal-qty" min="1" value="1" class="w-12 text-center font-bold text-sm border rounded-lg py-1" oninput="setVariantQty(this.value)">
                     <button onclick="adjustVariantQty(1)" class="w-7 h-7 rounded-full border text-gray-600 hover:bg-gray-50">+</button>
                 </div>
             </div>
@@ -644,7 +644,7 @@
         function updateVariantModalSummary() {
             const price = currentVariantUnitPrice();
             document.getElementById('variant-modal-price').innerText = formatRupiah(price);
-            document.getElementById('variant-modal-qty').innerText = variantModalContext.qty;
+            document.getElementById('variant-modal-qty').value = variantModalContext.qty;
             document.getElementById('variant-modal-subtotal').innerText = formatRupiah(price * variantModalContext.qty);
         }
 
@@ -652,6 +652,16 @@
             if (!variantModalContext) return;
             variantModalContext.qty = Math.max(1, variantModalContext.qty + delta);
             updateVariantModalSummary();
+        }
+
+        // Dipanggil saat admin/pembeli mengetik langsung di kotak jumlah (bukan cuma pakai tombol +/-)
+        function setVariantQty(value) {
+            if (!variantModalContext) return;
+            const qty = Math.max(1, parseInt(value, 10) || 1);
+            variantModalContext.qty = qty;
+            // update ringkasan tanpa menimpa ulang input yang sedang diketik (hindari kursor lompat ke akhir)
+            const price = currentVariantUnitPrice();
+            document.getElementById('variant-modal-subtotal').innerText = formatRupiah(price * qty);
         }
 
         function closeVariantModal() {
