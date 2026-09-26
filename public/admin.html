@@ -45,7 +45,10 @@
             <div class="lg:w-56 lg:shrink-0 lg:sticky lg:top-4">
                 <div class="bg-white p-1.5 rounded-xl shadow-sm border flex lg:flex-col gap-1 text-xs font-semibold overflow-x-auto lg:overflow-visible">
                     <button class="tab-btn active px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left" data-tab="tab-products" onclick="showTab('tab-products')"><i class="fa-solid fa-box w-4"></i> Produk & Promo</button>
-                    <button class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left" data-tab="tab-orders" onclick="showTab('tab-orders')"><i class="fa-solid fa-receipt w-4"></i> Pesanan Masuk</button>
+                    <button class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left relative" data-tab="tab-orders" onclick="showTab('tab-orders')">
+                        <i class="fa-solid fa-receipt w-4"></i> Pesanan Masuk
+                        <span id="new-order-badge" class="hidden absolute -top-1.5 -right-1.5 lg:top-1.5 lg:right-2 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center leading-none">0</span>
+                    </button>
                     <button class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left" data-tab="tab-banners" onclick="showTab('tab-banners')"><i class="fa-solid fa-image w-4"></i> Banner Promo</button>
                     <button class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left" data-tab="tab-payments" onclick="showTab('tab-payments')"><i class="fa-solid fa-credit-card w-4"></i> Metode Pembayaran</button>
                     <button class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap lg:w-full lg:text-left" data-tab="tab-report" onclick="showTab('tab-report')"><i class="fa-solid fa-chart-line w-4"></i> Laporan Penjualan</button>
@@ -93,6 +96,23 @@
                         <label class="block font-medium text-gray-600 mb-1 text-xs">Deskripsi Lengkap Produk</label>
                         <textarea id="input-description" rows="3" placeholder="Jelaskan detail produk: bahan, ukuran, waktu pengerjaan, dll." class="w-full border rounded-lg p-2 text-xs"></textarea>
                     </div>
+                    <div class="border-t pt-3">
+                        <label class="block font-medium text-gray-600 mb-1 text-xs">Harga Promo (opsional)</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="number" id="input-discount-price" placeholder="Harga setelah diskon" class="flex-1 border rounded-lg p-2 text-xs">
+                            <label class="flex items-center gap-1.5 text-xs text-gray-600 whitespace-nowrap">
+                                <input type="checkbox" id="input-discount-active" class="w-4 h-4"> Aktifkan
+                            </label>
+                        </div>
+                    </div>
+                    <div class="border-t pt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block font-medium text-gray-600 text-xs">Varian Produk (opsional)</label>
+                            <button type="button" onclick="addVariantRow('new')" class="text-orange-600 hover:text-orange-700 text-[11px] font-semibold"><i class="fa-solid fa-plus mr-0.5"></i> Tambah Varian</button>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mb-2">Contoh: "Luxury Eco 01", "Luxury Eco 02", dst. Kosongkan Harga/Stok kalau ingin ikut harga & stok produk induk.</p>
+                        <div id="new-variant-list" class="space-y-1.5"></div>
+                    </div>
                     <button onclick="addProduct()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg text-xs transition">
                         Simpan ke Database Supabase
                     </button>
@@ -104,16 +124,14 @@
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="bg-gray-50 text-gray-500 border-b">
-                                    <th class="p-2">Nama Produk</th>
+                                    <th class="p-2">Produk</th>
                                     <th class="p-2">Kategori</th>
-                                    <th class="p-2">Harga Normal</th>
-                                    <th class="p-2">Harga Promo</th>
-                                    <th class="p-2 text-center">Promo Aktif?</th>
+                                    <th class="p-2">Harga & Promo</th>
                                     <th class="p-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-product-list" class="divide-y">
-                                <tr><td colspan="6" class="p-4 text-center text-gray-400">Memuat data...</td></tr>
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">Memuat data...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -140,15 +158,14 @@
                                 <tr class="bg-gray-50 text-gray-500 border-b">
                                     <th class="p-2">No. Pesanan</th>
                                     <th class="p-2">Pemesan</th>
+                                    <th class="p-2">Produk & Varian</th>
                                     <th class="p-2">Total</th>
-                                    <th class="p-2">File / Biodata</th>
-                                    <th class="p-2">Status Pembayaran</th>
-                                    <th class="p-2">Status Pesanan</th>
+                                    <th class="p-2">Status</th>
                                     <th class="p-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-order-list-Diproses" class="divide-y">
-                                <tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data...</td></tr>
+                                <tr><td colspan="6" class="p-4 text-center text-gray-400">Memuat data...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -159,10 +176,9 @@
                                 <tr class="bg-gray-50 text-gray-500 border-b">
                                     <th class="p-2">No. Pesanan</th>
                                     <th class="p-2">Pemesan</th>
+                                    <th class="p-2">Produk & Varian</th>
                                     <th class="p-2">Total</th>
-                                    <th class="p-2">File / Biodata</th>
-                                    <th class="p-2">Status Pembayaran</th>
-                                    <th class="p-2">Status Pesanan</th>
+                                    <th class="p-2">Status</th>
                                     <th class="p-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -176,10 +192,9 @@
                                 <tr class="bg-gray-50 text-gray-500 border-b">
                                     <th class="p-2">No. Pesanan</th>
                                     <th class="p-2">Pemesan</th>
+                                    <th class="p-2">Produk & Varian</th>
                                     <th class="p-2">Total</th>
-                                    <th class="p-2">File / Biodata</th>
-                                    <th class="p-2">Status Pembayaran</th>
-                                    <th class="p-2">Status Pesanan</th>
+                                    <th class="p-2">Status</th>
                                     <th class="p-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -355,12 +370,23 @@
             <div class="border-t pt-2">
                 <div class="flex items-center justify-between mb-1">
                     <label class="block font-medium text-gray-600 text-xs">Varian Produk (opsional)</label>
-                    <button type="button" onclick="addVariantRow()" class="text-orange-600 hover:text-orange-700 text-[11px] font-semibold"><i class="fa-solid fa-plus mr-0.5"></i> Tambah Varian</button>
+                    <button type="button" onclick="addVariantRow('edit')" class="text-orange-600 hover:text-orange-700 text-[11px] font-semibold"><i class="fa-solid fa-plus mr-0.5"></i> Tambah Varian</button>
                 </div>
                 <p class="text-[10px] text-gray-400 mb-2">Contoh: "Luxury Eco 01", "Luxury Eco 02", dst. Kosongkan Harga/Stok kalau ingin ikut harga & stok produk induk. Kalau tidak ada varian ditambahkan, pembeli langsung beli tanpa perlu pilih variasi.</p>
                 <div id="edit-variant-list" class="space-y-1.5"></div>
             </div>
             <button onclick="saveEditProduct()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg text-xs transition">Simpan Perubahan</button>
+        </div>
+    </div>
+
+    <!-- Modal Detail Pesanan -->
+    <div id="order-detail-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl p-4 space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-sm text-gray-800">Detail Pesanan</h3>
+                <button onclick="closeOrderDetail()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="order-detail-body" class="space-y-3"></div>
         </div>
     </div>
 
@@ -395,6 +421,33 @@
             document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
+            if (id === 'tab-orders') markOrdersSeen();
+        }
+
+        // ============== BADGE NOTIFIKASI PESANAN BARU ==============
+        async function refreshNewOrderBadge() {
+            try {
+                const res = await fetch('/api/admin/orders/unseen-count', { headers: authHeaders() });
+                const data = await res.json();
+                const badge = document.getElementById('new-order-badge');
+                const count = data.count || 0;
+                if (count > 0) {
+                    badge.classList.remove('hidden');
+                    badge.innerText = count > 99 ? '99+' : count;
+                } else {
+                    badge.classList.add('hidden');
+                }
+            } catch (e) { /* diamkan kalau gagal, tidak kritikal */ }
+        }
+
+        // Dipanggil otomatis saat admin membuka tab "Pesanan Masuk" — menandai semua pesanan baru sebagai sudah dilihat
+        async function markOrdersSeen() {
+            const badge = document.getElementById('new-order-badge');
+            if (badge.classList.contains('hidden')) return; // tidak ada yang baru, tidak perlu request
+            try {
+                await fetch('/api/admin/orders/mark-seen', { method: 'POST', headers: authHeaders() });
+                badge.classList.add('hidden');
+            } catch (e) { /* diamkan kalau gagal */ }
         }
 
         // ============== LAPORAN PENJUALAN ==============
@@ -527,23 +580,25 @@
                 const tbody = document.getElementById('admin-product-list');
 
                 if (!Array.isArray(products) || products.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Belum ada produk.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">Belum ada produk.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = products.map(p => `
                     <tr data-id="${p.id}">
-                        <td class="p-2 font-medium">${p.name}</td>
+                        <td class="p-2 font-medium">${p.name}${Array.isArray(p.variants) && p.variants.length > 0 ? `<br><span class="text-[10px] text-gray-400 font-normal">${p.variants.length} varian</span>` : ''}</td>
                         <td class="p-2">${p.category}</td>
-                        <td class="p-2">Rp ${Number(p.price).toLocaleString('id-ID')}</td>
                         <td class="p-2">
-                            <input type="number" value="${p.discount_price || ''}" placeholder="Harga promo" class="w-24 border rounded p-1 text-xs" id="discount-price-${p.id}">
-                        </td>
-                        <td class="p-2 text-center">
-                            <input type="checkbox" ${p.discount_active ? 'checked' : ''} id="discount-active-${p.id}" class="w-4 h-4">
+                            <p class="text-gray-500">Rp ${Number(p.price).toLocaleString('id-ID')}</p>
+                            <div class="flex gap-1.5 items-center mt-1">
+                                <input type="number" value="${p.discount_price || ''}" placeholder="Harga promo" class="w-24 border rounded p-1 text-[11px]" id="discount-price-${p.id}">
+                                <label class="flex items-center gap-1 text-[10px] text-gray-500 whitespace-nowrap">
+                                    <input type="checkbox" ${p.discount_active ? 'checked' : ''} id="discount-active-${p.id}" class="w-3.5 h-3.5"> Aktif
+                                </label>
+                                <button onclick="savePromo('${p.id}')" class="bg-green-50 text-green-600 px-1.5 py-1 rounded font-medium hover:bg-green-100"><i class="fa-solid fa-floppy-disk"></i></button>
+                            </div>
                         </td>
                         <td class="p-2 text-center space-x-1 whitespace-nowrap">
-                            <button onclick="savePromo('${p.id}')" class="bg-green-50 text-green-600 px-2 py-1 rounded font-medium hover:bg-green-100"><i class="fa-solid fa-floppy-disk"></i></button>
                             <button onclick='openEditProduct(${JSON.stringify(p)})' class="bg-blue-50 text-blue-600 px-2 py-1 rounded font-medium hover:bg-blue-100"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="deleteProduct('${p.id}')" class="bg-red-50 text-red-600 px-2 py-1 rounded font-medium hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -560,6 +615,8 @@
             const price = document.getElementById('input-price').value;
             const stock = document.getElementById('input-stock').value;
             const description = document.getElementById('input-description').value;
+            const discount_price = document.getElementById('input-discount-price').value;
+            const discount_active = document.getElementById('input-discount-active').checked;
 
             if (!name || !price || !stock) {
                 alert('Mohon lengkapi nama, harga, dan stok produk!');
@@ -569,18 +626,31 @@
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                body: JSON.stringify({ name, category, price: Number(price), stock, image_urls: newProductImages, description })
+                body: JSON.stringify({
+                    name, category, price: Number(price), stock, image_urls: newProductImages, description,
+                    discount_price: discount_price ? Number(discount_price) : null,
+                    discount_active
+                })
             });
 
             if (res.ok) {
+                const result = await res.json().catch(() => ({}));
+                const newId = result.data && result.data[0] && result.data[0].id;
+                if (newId && variantRowsByMode.new.some(v => (v.name || '').trim())) {
+                    try { await saveProductVariants('new', newId); } catch (err) { alert(err.message); }
+                }
                 alert('Produk berhasil ditambahkan!');
                 document.getElementById('input-name').value = '';
                 document.getElementById('input-price').value = '';
                 document.getElementById('input-stock').value = '';
                 document.getElementById('input-description').value = '';
+                document.getElementById('input-discount-price').value = '';
+                document.getElementById('input-discount-active').checked = false;
                 document.getElementById('input-image-status').innerText = 'Belum ada foto diunggah.';
                 newProductImages = [];
                 renderImageChips('input-image-preview', [], 'removeNewProductImage');
+                variantRowsByMode.new = [];
+                renderVariantRows('new');
                 fetchAdminProducts();
             } else {
                 const err = await res.json().catch(() => ({}));
@@ -590,7 +660,6 @@
 
         // ============== EDIT PRODUK ==============
         let editProductImages = [];
-        let editVariantRows = [];
 
         function openEditProduct(p) {
             document.getElementById('edit-id').value = p.id;
@@ -602,52 +671,78 @@
             editProductImages = Array.isArray(p.image_urls) && p.image_urls.length > 0 ? [...p.image_urls] : (p.image_url ? [p.image_url] : []);
             renderImageChips('edit-image-preview', editProductImages, 'removeEditProductImage');
 
-            editVariantRows = Array.isArray(p.variants)
-                ? p.variants.map(v => ({ name: v.name, price: v.price ?? '', stock: v.stock ?? '' }))
+            variantRowsByMode.edit = Array.isArray(p.variants)
+                ? p.variants.map(v => ({ name: v.name, price: v.price ?? '', stock: v.stock ?? '', image_url: v.image_url || '' }))
                 : [];
-            renderVariantRows();
+            renderVariantRows('edit');
 
             document.getElementById('edit-product-modal').classList.remove('hidden');
         }
 
-        // ---- Varian produk: daftar baris (nama, harga opsional, stok opsional) di form Edit Produk ----
-        function renderVariantRows() {
-            const wrap = document.getElementById('edit-variant-list');
-            if (editVariantRows.length === 0) {
+        // ---- Varian produk: daftar baris (foto, nama, harga opsional, stok opsional) ----
+        // Dipakai di 2 tempat: form "Tambah Produk Baru" (mode 'new') & modal "Edit Produk" (mode 'edit')
+        let variantRowsByMode = { new: [], edit: [] };
+
+        function renderVariantRows(mode) {
+            const wrap = document.getElementById(mode === 'new' ? 'new-variant-list' : 'edit-variant-list');
+            const rows = variantRowsByMode[mode];
+            if (rows.length === 0) {
                 wrap.innerHTML = '<p class="text-[10px] text-gray-400">Belum ada varian. Klik "Tambah Varian" kalau produk ini punya beberapa pilihan (mis. desain berbeda).</p>';
                 return;
             }
-            wrap.innerHTML = editVariantRows.map((v, i) => `
-                <div class="flex gap-1.5 items-center">
-                    <input type="text" value="${(v.name || '').replace(/"/g, '&quot;')}" placeholder="Nama varian (mis. Luxury Eco 01)"
-                        oninput="updateVariantRow(${i}, 'name', this.value)" class="flex-1 border rounded-lg p-1.5 text-xs">
-                    <input type="number" value="${v.price}" placeholder="Harga (opsional)"
-                        oninput="updateVariantRow(${i}, 'price', this.value)" class="w-24 border rounded-lg p-1.5 text-xs">
-                    <input type="text" value="${v.stock}" placeholder="Stok (opsional)"
-                        oninput="updateVariantRow(${i}, 'stock', this.value)" class="w-20 border rounded-lg p-1.5 text-xs">
-                    <button type="button" onclick="removeVariantRow(${i})" class="text-red-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash"></i></button>
+            wrap.innerHTML = rows.map((v, i) => `
+                <div class="flex gap-1.5 items-start bg-gray-50 rounded-lg p-1.5">
+                    <label class="flex-shrink-0 cursor-pointer" title="Foto varian (opsional)">
+                        <div class="w-10 h-10 rounded border bg-white overflow-hidden flex items-center justify-center text-gray-300">
+                            ${v.image_url ? `<img src="${v.image_url}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-camera text-xs"></i>'}
+                        </div>
+                        <input type="file" accept="image/*" class="hidden" onchange="handleVariantImageUpload('${mode}', ${i}, event)">
+                    </label>
+                    <div class="flex-1 space-y-1 min-w-0">
+                        <input type="text" value="${(v.name || '').replace(/"/g, '&quot;')}" placeholder="Nama varian (mis. Luxury Eco 01)"
+                            oninput="updateVariantRow('${mode}', ${i}, 'name', this.value)" class="w-full border rounded-lg p-1.5 text-xs">
+                        <div class="flex gap-1.5">
+                            <input type="number" value="${v.price}" placeholder="Harga (opsional)"
+                                oninput="updateVariantRow('${mode}', ${i}, 'price', this.value)" class="flex-1 min-w-0 border rounded-lg p-1.5 text-xs">
+                            <input type="text" value="${v.stock}" placeholder="Stok (opsional)"
+                                oninput="updateVariantRow('${mode}', ${i}, 'stock', this.value)" class="w-16 border rounded-lg p-1.5 text-xs">
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeVariantRow('${mode}', ${i})" class="text-red-400 hover:text-red-600 px-1 pt-2 flex-shrink-0"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
         }
 
-        function addVariantRow() {
-            editVariantRows.push({ name: '', price: '', stock: '' });
-            renderVariantRows();
+        function addVariantRow(mode) {
+            variantRowsByMode[mode].push({ name: '', price: '', stock: '', image_url: '' });
+            renderVariantRows(mode);
         }
 
-        function updateVariantRow(i, key, value) {
-            if (!editVariantRows[i]) return;
-            editVariantRows[i][key] = value;
+        function updateVariantRow(mode, i, key, value) {
+            if (!variantRowsByMode[mode][i]) return;
+            variantRowsByMode[mode][i][key] = value;
         }
 
-        function removeVariantRow(i) {
-            editVariantRows.splice(i, 1);
-            renderVariantRows();
+        function removeVariantRow(mode, i) {
+            variantRowsByMode[mode].splice(i, 1);
+            renderVariantRows(mode);
         }
 
-        async function saveProductVariants(productId) {
-            const variants = editVariantRows
-                .map(v => ({ name: (v.name || '').trim(), price: v.price, stock: v.stock }))
+        async function handleVariantImageUpload(mode, i, e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file || !variantRowsByMode[mode][i]) return;
+            try {
+                const url = await uploadImageFile(file);
+                variantRowsByMode[mode][i].image_url = url;
+                renderVariantRows(mode);
+            } catch (err) {
+                alert('Gagal mengunggah foto varian: ' + err.message);
+            }
+        }
+
+        async function saveProductVariants(mode, productId) {
+            const variants = variantRowsByMode[mode]
+                .map(v => ({ name: (v.name || '').trim(), price: v.price, stock: v.stock, image_url: v.image_url || null }))
                 .filter(v => v.name.length > 0);
             const res = await fetch(`/api/admin/products/${productId}/variants`, {
                 method: 'PUT',
@@ -706,7 +801,7 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error('Gagal menyimpan perubahan produk.');
-                await saveProductVariants(id);
+                await saveProductVariants('edit', id);
                 closeEditProduct();
                 fetchAdminProducts();
             } catch (err) {
@@ -760,55 +855,104 @@
         }
 
         function renderOrderRow(o) {
-            const fileLinks = (o.items || [])
-                .filter(i => i.file_url)
-                .map(i => `<a href="${i.file_url}" target="_blank" class="text-blue-500 underline block">${i.file_name || 'File'}</a>`)
-                .join('');
-            const biodata = o.biodata && Object.keys(o.biodata).length > 0
-                ? `<div class="text-[10px] text-purple-600 mt-1">Acara: ${o.biodata.nama_acara || '-'}<br>Tgl: ${o.biodata.tanggal_acara || '-'}<br>Lokasi: ${o.biodata.lokasi_acara || '-'}</div>`
-                : '';
-            const designNotes = (o.items || [])
-                .filter(i => i.note)
-                .map(i => `<div class="text-[10px] text-amber-700 mt-1"><b>${i.name}:</b> ${i.note}</div>`)
-                .join('');
             const paymentStatus = o.payment_status || 'Menunggu Pembayaran';
             const orderStatus = o.order_status || 'Diproses';
             const hasFiles = (o.items || []).some(i => i.file_url);
             const canDeleteFiles = hasFiles && ['Selesai', 'Dibatalkan'].includes(orderStatus);
             const canDeleteOrder = orderStatus === 'Dibatalkan';
+            const itemsSummary = (o.items || [])
+                .map(i => `${i.qty}x ${i.name}${i.variant ? `<br><span class="text-gray-400 text-[10px]">↳ ${i.variant}</span>` : ''}`)
+                .join('<hr class="my-1 border-gray-100">');
 
             return `
-            <tr class="align-top">
-                <td class="p-2 font-medium">${o.order_code}</td>
+            <tr class="align-top ${o.is_new ? 'bg-orange-50/60' : ''}">
+                <td class="p-2 font-medium">${o.is_new ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-1" title="Belum dilihat"></span>' : ''}${o.order_code}</td>
                 <td class="p-2">${o.buyer_name}<br><span class="text-gray-400">${o.buyer_wa}</span></td>
-                <td class="p-2 text-orange-600 font-bold">${formatRupiah(o.total_amount)}</td>
-                <td class="p-2">
-                    <div class="max-h-16 overflow-y-auto pr-1">${fileLinks || '-'}${biodata}${designNotes}</div>
-                </td>
-                <td class="p-2">
+                <td class="p-2"><div class="max-h-20 overflow-y-auto pr-1">${itemsSummary || '-'}</div></td>
+                <td class="p-2 text-orange-600 font-bold whitespace-nowrap">${formatRupiah(o.total_amount)}</td>
+                <td class="p-2 space-y-1 min-w-[130px]">
                     <select id="payment-status-${o.id}" onchange="syncCancelStatus('${o.id}', this.value)" class="border rounded p-1 text-[11px] w-full">
                         ${paymentStatuses.map(s => `<option value="${s}" ${s === paymentStatus ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
-                </td>
-                <td class="p-2">
                     <select id="order-status-${o.id}" class="border rounded p-1 text-[11px] w-full">
                         ${orderStatuses.map(s => `<option value="${s}" ${s === orderStatus ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
-                </td>
-                <td class="p-2 text-center space-y-1">
                     <button id="save-status-${o.id}" onclick="saveOrderStatus('${o.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded font-medium hover:bg-blue-100 block w-full"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
-                    <a href="${toWaLink(o.buyer_wa)}" target="_blank" class="bg-green-50 text-green-600 px-2 py-1 rounded font-medium hover:bg-green-100 block"><i class="fa-brands fa-whatsapp"></i> Hubungi</a>
-                    <a href="nota.html?id=${o.id}" target="_blank" class="bg-orange-50 text-orange-600 px-2 py-1 rounded font-medium hover:bg-orange-100 block"><i class="fa-solid fa-file-invoice"></i> Nota</a>
-                    ${canDeleteFiles ? `<button onclick="deleteOrderFiles('${o.id}')" class="bg-yellow-50 text-yellow-700 px-2 py-1 rounded font-medium hover:bg-yellow-100 block w-full"><i class="fa-solid fa-file-circle-xmark"></i> Hapus File</button>` : ''}
-                    ${canDeleteOrder ? `<button onclick="deleteOrder('${o.id}')" class="bg-red-50 text-red-600 px-2 py-1 rounded font-medium hover:bg-red-100 block w-full"><i class="fa-solid fa-trash"></i> Hapus</button>` : ''}
+                </td>
+                <td class="p-2 text-center">
+                    <div class="flex flex-wrap gap-1 justify-center max-w-[92px]">
+                        <button onclick="openOrderDetail('${o.id}')" title="Detail Pesanan" class="bg-gray-100 text-gray-700 w-7 h-7 rounded hover:bg-gray-200"><i class="fa-solid fa-eye"></i></button>
+                        <a href="${toWaLink(o.buyer_wa)}" target="_blank" title="Hubungi via WA" class="bg-green-50 text-green-600 w-7 h-7 rounded hover:bg-green-100 flex items-center justify-center"><i class="fa-brands fa-whatsapp"></i></a>
+                        <a href="nota.html?id=${o.id}" target="_blank" title="Lihat Nota" class="bg-orange-50 text-orange-600 w-7 h-7 rounded hover:bg-orange-100 flex items-center justify-center"><i class="fa-solid fa-file-invoice"></i></a>
+                        ${canDeleteFiles ? `<button onclick="deleteOrderFiles('${o.id}')" title="Hapus File" class="bg-yellow-50 text-yellow-700 w-7 h-7 rounded hover:bg-yellow-100"><i class="fa-solid fa-file-circle-xmark"></i></button>` : ''}
+                        ${canDeleteOrder ? `<button onclick="deleteOrder('${o.id}')" title="Hapus Pesanan" class="bg-red-50 text-red-600 w-7 h-7 rounded hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
                 </td>
             </tr>
             `;
         }
 
+        // ---- Modal "Detail Pesanan": rincian lengkap 1 pesanan (produk/varian, catatan, file, biodata) ----
+        function openOrderDetail(id) {
+            const o = allOrdersCache.find(x => String(x.id) === String(id));
+            if (!o) return;
+
+            const itemsHtml = (o.items || []).map(i => `
+                <div class="flex justify-between items-start border-b border-gray-100 py-2 last:border-0">
+                    <div class="pr-2">
+                        <p class="font-medium text-gray-800">${i.name}</p>
+                        ${i.variant ? `<p class="text-[11px] text-gray-400">Varian: ${i.variant}</p>` : ''}
+                        ${i.note ? `<p class="text-[11px] text-amber-700 mt-0.5"><i class="fa-solid fa-pen mr-1"></i>${i.note}</p>` : ''}
+                        ${i.file_url ? `<a href="${i.file_url}" target="_blank" class="text-[11px] text-blue-500 underline block mt-0.5"><i class="fa-solid fa-paperclip mr-1"></i>${i.file_name || 'Lihat file'}</a>` : ''}
+                    </div>
+                    <div class="text-right whitespace-nowrap text-xs">
+                        <p>${i.qty} x ${formatRupiah(i.price)}</p>
+                        <p class="font-bold text-orange-600">${formatRupiah(i.subtotal || i.price * i.qty)}</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-xs text-gray-400">Tidak ada rincian produk.</p>';
+
+            const biodataHtml = o.biodata && Object.keys(o.biodata).length > 0 ? `
+                <div class="bg-purple-50 rounded-lg p-2.5 text-xs text-purple-800 space-y-0.5">
+                    <p><b>Nama Acara:</b> ${o.biodata.nama_acara || '-'}</p>
+                    <p><b>Tanggal Acara:</b> ${o.biodata.tanggal_acara || '-'}</p>
+                    <p><b>Lokasi Acara:</b> ${o.biodata.lokasi_acara || '-'}</p>
+                </div>` : '';
+
+            document.getElementById('order-detail-body').innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-sm text-gray-800">${o.order_code}</p>
+                        <p class="text-xs text-gray-500">${new Date(o.created_at).toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="text-right text-xs">
+                        <p class="text-gray-500">${o.payment_method || '-'}</p>
+                        <p class="font-medium">${o.payment_status || '-'} · ${o.order_status || '-'}</p>
+                    </div>
+                </div>
+                <div class="text-xs bg-gray-50 rounded-lg p-2.5">
+                    <p><b>${o.buyer_name}</b></p>
+                    <p class="text-gray-500">${o.buyer_wa}</p>
+                </div>
+                ${biodataHtml}
+                <div>
+                    <p class="text-[10px] font-semibold text-gray-500 mb-1">RINCIAN PRODUK</p>
+                    ${itemsHtml}
+                </div>
+                <div class="flex justify-between items-center border-t pt-2 font-bold text-sm">
+                    <span>Total</span><span class="text-orange-600">${formatRupiah(o.total_amount)}</span>
+                </div>
+            `;
+            document.getElementById('order-detail-modal').classList.remove('hidden');
+        }
+
+        function closeOrderDetail() {
+            document.getElementById('order-detail-modal').classList.add('hidden');
+        }
+
         async function fetchOrders() {
             ['Diproses', 'Selesai', 'Dibatalkan'].forEach(g => {
-                document.getElementById(`admin-order-list-${g}`).innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data...</td></tr>';
+                document.getElementById(`admin-order-list-${g}`).innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Memuat data...</td></tr>';
             });
             try {
                 const res = await fetch('/api/orders', { headers: authHeaders() });
@@ -821,12 +965,12 @@
                     const tbody = document.getElementById(`admin-order-list-${group}`);
                     tbody.innerHTML = rows.length > 0
                         ? rows.map(renderOrderRow).join('')
-                        : '<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada pesanan di kategori ini.</td></tr>';
+                        : '<tr><td colspan="6" class="p-4 text-center text-gray-400">Belum ada pesanan di kategori ini.</td></tr>';
                 });
                 showOrderGroup(currentOrderGroup);
             } catch (e) {
                 ['Diproses', 'Selesai', 'Dibatalkan'].forEach(g => {
-                    document.getElementById(`admin-order-list-${g}`).innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Gagal memuat pesanan.</td></tr>';
+                    document.getElementById(`admin-order-list-${g}`).innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Gagal memuat pesanan.</td></tr>';
                 });
             }
         }
@@ -1046,6 +1190,9 @@
             fetchBanners();
             fetchPaymentMethods();
             fetchSettings();
+            renderVariantRows('new');
+            refreshNewOrderBadge();
+            setInterval(refreshNewOrderBadge, 20000); // cek pesanan baru tiap 20 detik
         }
 
         // ============== PENGATURAN TOKO ==============

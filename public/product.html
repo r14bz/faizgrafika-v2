@@ -40,6 +40,10 @@
                     <button onclick="imgGo(1)" id="img-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-7 h-7 rounded-full items-center justify-center text-xs z-10"><i class="fa-solid fa-chevron-right"></i></button>
                     <div id="img-dots" class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10"></div>
                 </div>
+                <div id="variant-gallery-wrap" class="hidden px-4 pt-3">
+                    <p class="text-[10px] font-semibold text-gray-500 mb-1.5">PILIHAN VARIASI</p>
+                    <div id="variant-gallery" class="flex gap-2 overflow-x-auto pb-1"></div>
+                </div>
                 <div class="p-4 space-y-2">
                     <span id="p-category" class="inline-block bg-orange-100 text-orange-600 text-[10px] font-semibold px-2 py-0.5 rounded"></span>
                     <h1 id="p-name" class="font-bold text-lg text-gray-900"></h1>
@@ -155,6 +159,8 @@
         let selectedRating = 0;
         let productImages = [];
         let imgIdx = 0;
+        let galleryVariantIndex = {}; // { variantId: indexDiProductImages } — untuk lompat ke foto varian
+        let preselectedVariantId = null; // diisi saat pengunjung klik thumbnail varian di bawah foto produk
 
         function formatRupiah(n) {
             return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -197,6 +203,37 @@
             if (productImages.length === 0) return;
             imgIdx = (imgIdx + delta + productImages.length) % productImages.length;
             updateImageSlider();
+        }
+
+        // Strip thumbnail varian di bawah foto produk (mirip Shopee): klik salah satu langsung
+        // melompat ke foto varian tsb di slider, tanpa harus geser foto satu-satu.
+        function renderVariantGallery(variants, fallbackImage) {
+            const wrap = document.getElementById('variant-gallery-wrap');
+            const strip = document.getElementById('variant-gallery');
+            if (!variants || variants.length === 0) {
+                wrap.classList.add('hidden');
+                strip.innerHTML = '';
+                return;
+            }
+            wrap.classList.remove('hidden');
+            strip.innerHTML = variants.map(v => {
+                const thumb = v.image_url || fallbackImage || '';
+                return `
+                <button type="button" onclick="jumpToVariantImage('${v.id}')" class="flex-shrink-0 w-16 text-center">
+                    <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                        ${thumb ? `<img src="${thumb}" class="w-full h-full object-cover" loading="lazy">` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-solid fa-image"></i></div>'}
+                    </div>
+                    <p class="text-[9px] text-gray-500 mt-1 line-clamp-1">${v.name}</p>
+                </button>`;
+            }).join('');
+        }
+
+        function jumpToVariantImage(variantId) {
+            preselectedVariantId = variantId;
+            if (galleryVariantIndex[variantId] !== undefined) {
+                imgIdx = galleryVariantIndex[variantId];
+                updateImageSlider();
+            }
         }
 
         function starsMarkup(avg, size) {
@@ -242,9 +279,26 @@
             document.getElementById('product-content').classList.remove('hidden');
             document.getElementById('bottom-bar').classList.remove('hidden');
 
-            productImages = Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls : (p.image_url ? [p.image_url] : []);
+            const baseImages = Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls : (p.image_url ? [p.image_url] : []);
+            const variants = Array.isArray(p.variants) ? p.variants : [];
+
+            // Gabungkan foto produk + foto tiap varian ke satu slider (mirip Shopee), supaya pengunjung
+            // bisa melihat foto varian tanpa berpindah halaman.
+            productImages = [...baseImages];
+            galleryVariantIndex = {};
+            variants.forEach(v => {
+                if (!v.image_url) return;
+                let idx = productImages.indexOf(v.image_url);
+                if (idx === -1) {
+                    productImages.push(v.image_url);
+                    idx = productImages.length - 1;
+                }
+                galleryVariantIndex[v.id] = idx;
+            });
+
             imgIdx = 0;
             buildImageSlider();
+            renderVariantGallery(variants, baseImages[0] || p.image_url || '');
 
             document.getElementById('p-category').innerText = p.category;
             document.getElementById('p-name').innerText = p.name;
@@ -362,11 +416,14 @@
             const hasPriceOverride = selectedVariant && selectedVariant.price !== null && selectedVariant.price !== undefined;
             const price = hasPriceOverride ? Number(selectedVariant.price) : effectivePrice(currentProduct);
             const variantName = selectedVariant ? selectedVariant.name : null;
+            const cover = (Array.isArray(currentProduct.image_urls) && currentProduct.image_urls[0]) || currentProduct.image_url || '';
+            const image = (selectedVariant && selectedVariant.image_url) || cover;
             const existing = cart.find(i => i.name === currentProduct.name && (i.variant || null) === variantName);
             if (existing) {
                 existing.qty += qty;
+                existing.image = image; // perbarui thumbnail sesuai varian terakhir yang dipilih
             } else {
-                cart.push({ name: currentProduct.name, price, qty, category: currentProduct.category, original_price: currentProduct.price, variant: variantName });
+                cart.push({ name: currentProduct.name, price, qty, category: currentProduct.category, original_price: currentProduct.price, variant: variantName, image });
             }
             localStorage.setItem(CART_KEY, JSON.stringify(cart));
             return cart;
@@ -387,10 +444,15 @@
             }
 
             wrap.classList.remove('hidden');
-            selectedVariant = variants[0];
+            let defaultIdx = 0;
+            if (preselectedVariantId) {
+                const idx = variants.findIndex(v => v.id === preselectedVariantId);
+                if (idx !== -1) defaultIdx = idx;
+            }
+            selectedVariant = variants[defaultIdx];
             options.innerHTML = variants.map((v, i) => `
                 <button type="button" data-idx="${i}" onclick="pickVariant(${i})"
-                    class="variant-pick-btn text-left border rounded-lg px-2.5 py-2 text-xs font-medium transition ${i === 0 ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-400'}">
+                    class="variant-pick-btn text-left border rounded-lg px-2.5 py-2 text-xs font-medium transition ${i === defaultIdx ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-400'}">
                     ${v.name}
                 </button>
             `).join('');

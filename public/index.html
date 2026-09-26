@@ -36,7 +36,7 @@
         .cart-bump { animation: cartBump 0.35s ease; }
     </style>
 </head>
-<body class="text-gray-800 pb-20">
+<body class="text-gray-800 pb-20 lg:pb-0 min-h-screen flex flex-col">
 
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-md lg:max-w-7xl mx-auto px-4 lg:px-8 py-3 lg:py-5 flex justify-between items-center">
@@ -70,7 +70,7 @@
         </div>
     </header>
 
-    <main class="max-w-md lg:max-w-7xl mx-auto p-4 lg:px-8 space-y-4">
+    <main class="max-w-md lg:max-w-7xl mx-auto p-4 lg:px-8 space-y-4 flex-1 w-full">
         <!-- Banner Promo (dinamis dari panel admin, fallback ke banner default) -->
         <div id="banner-slot" class="relative overflow-hidden rounded-2xl shadow-lg">
             <div class="bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white relative overflow-hidden h-32 lg:h-56 flex items-center">
@@ -557,15 +557,16 @@
         document.getElementById('search-input-desktop').addEventListener('input', handleSearchInput);
 
         // ============== KERANJANG ==============
-        function addToCartCore(name, price, category, originalPrice, qty, variant) {
+        function addToCartCore(name, price, category, originalPrice, qty, variant, image) {
             qty = Math.max(1, parseInt(qty, 10) || 1);
             const cart = getCart();
             const variantName = variant || null;
             const existing = cart.find(i => i.name === name && (i.variant || null) === variantName);
             if (existing) {
                 existing.qty += qty;
+                if (image) existing.image = image;
             } else {
-                cart.push({ name, price, qty, category: category || '', original_price: originalPrice || price, variant: variantName });
+                cart.push({ name, price, qty, category: category || '', original_price: originalPrice || price, variant: variantName, image: image || null });
             }
             saveCart(cart);
             return cart;
@@ -580,7 +581,8 @@
                 openVariantModal(p, null);
                 return;
             }
-            addToCartCore(p.name, effectivePrice(p), p.category, Number(p.price));
+            const cover = (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '';
+            addToCartCore(p.name, effectivePrice(p), p.category, Number(p.price), 1, null, cover);
             openCart();
         }
 
@@ -593,19 +595,20 @@
                 openVariantModal(p, e.currentTarget);
                 return;
             }
-            openQtyModal(p.name, effectivePrice(p), p.category, Number(p.price), e.currentTarget);
+            const cover = (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '';
+            openQtyModal(p.name, effectivePrice(p), p.category, Number(p.price), e.currentTarget, cover);
         }
 
         // ============== POPUP PILIH VARIASI (dipakai tombol "Beli"/"Keranjang" untuk produk yang punya varian) ==============
-        let variantModalContext = null; // { product, qty, selected, triggerEl }
+        let variantModalContext = null; // { product, qty, selected, triggerEl, cover }
 
         function openVariantModal(p, triggerEl) {
             const variants = (p.variants || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            variantModalContext = { product: p, qty: 1, selected: variants[0] || null, triggerEl, variants };
+            const cover = (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '';
+            variantModalContext = { product: p, qty: 1, selected: variants[0] || null, triggerEl, variants, cover };
 
             document.getElementById('variant-modal-name').innerText = p.name;
-            const cover = (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '';
-            document.getElementById('variant-modal-img').src = cover;
+            document.getElementById('variant-modal-img').src = (variants[0] && variants[0].image_url) || cover;
 
             document.getElementById('variant-modal-options').innerHTML = variants.map((v, i) => `
                 <button type="button" onclick="selectVariant(${i})"
@@ -621,6 +624,7 @@
         function selectVariant(i) {
             if (!variantModalContext) return;
             variantModalContext.selected = variantModalContext.variants[i];
+            document.getElementById('variant-modal-img').src = variantModalContext.selected.image_url || variantModalContext.cover;
             document.querySelectorAll('#variant-modal-options .variant-opt').forEach((btn, idx) => {
                 btn.classList.toggle('border-gray-900', idx === i);
                 btn.classList.toggle('bg-gray-900', idx === i);
@@ -657,11 +661,12 @@
 
         function confirmVariantModal(mode) {
             if (!variantModalContext) return;
-            const { product, qty, selected, triggerEl } = variantModalContext;
+            const { product, qty, selected, triggerEl, cover } = variantModalContext;
             if (!selected) { alert('Mohon pilih variasi terlebih dahulu.'); return; }
 
             const price = currentVariantUnitPrice();
-            addToCartCore(product.name, price, product.category, Number(product.price), qty, selected.name);
+            const image = selected.image_url || cover;
+            addToCartCore(product.name, price, product.category, Number(product.price), qty, selected.name, image);
             closeVariantModal();
 
             if (mode === 'buy') {
@@ -674,8 +679,8 @@
         // ============== POPUP JUMLAH PEMBELIAN (dipakai tombol "Keranjang" di kartu produk) ==============
         let qtyModalContext = null;
 
-        function openQtyModal(name, price, category, originalPrice, triggerEl) {
-            qtyModalContext = { name, price, category, originalPrice, triggerEl };
+        function openQtyModal(name, price, category, originalPrice, triggerEl, image) {
+            qtyModalContext = { name, price, category, originalPrice, triggerEl, image };
             document.getElementById('qty-modal-product-name').innerText = name;
             document.getElementById('qty-modal-input').value = 1;
             showModal('qty-modal');
@@ -690,8 +695,8 @@
         function confirmQtyAddToCart() {
             if (!qtyModalContext) return;
             const qty = document.getElementById('qty-modal-input').value;
-            const { name, price, category, originalPrice, triggerEl } = qtyModalContext;
-            addToCartCore(name, price, category, originalPrice, qty);
+            const { name, price, category, originalPrice, triggerEl, image } = qtyModalContext;
+            addToCartCore(name, price, category, originalPrice, qty, null, image);
             closeQtyModal();
             if (triggerEl) flyToCart(triggerEl);
         }
@@ -758,10 +763,15 @@
             } else {
                 wrap.innerHTML = cart.map((item, idx) => `
                     <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2">
-                        <div class="flex-1 pr-2">
-                            <p class="font-medium text-gray-800 line-clamp-1">${item.name}</p>
-                            ${item.variant ? `<p class="text-[10px] text-gray-400">Varian: ${item.variant}</p>` : ''}
-                            <p class="text-orange-600 font-bold">${formatRupiah(item.price)}</p>
+                        <div class="flex items-center gap-2 flex-1 pr-2">
+                            <div class="w-11 h-11 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                                ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-300 text-sm"></i>'}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-gray-800 line-clamp-1">${item.name}</p>
+                                ${item.variant ? `<p class="text-[10px] text-gray-400">Varian: ${item.variant}</p>` : ''}
+                                <p class="text-orange-600 font-bold">${formatRupiah(item.price)}</p>
+                            </div>
                         </div>
                         <div class="flex items-center space-x-1.5">
                             <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center">−</button>
