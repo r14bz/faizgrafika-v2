@@ -21,9 +21,22 @@
 <body class="text-gray-800 pb-24">
 
     <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-8 py-3 lg:py-5 flex items-center space-x-3">
-            <a href="index.html" class="text-gray-500 hover:text-orange-500 lg:text-lg"><i class="fa-solid fa-arrow-left"></i></a>
-            <span class="brand-font font-bold text-sm lg:text-xl text-gray-900">FAIZGRAFIKA</span>
+        <div class="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-8 py-3 lg:py-5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="text-gray-500 hover:text-orange-500 lg:text-lg"><i class="fa-solid fa-arrow-left"></i></a>
+                <span class="brand-font font-bold text-sm lg:text-xl text-gray-900">FAIZGRAFIKA</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="index.html?openTrack=1" class="flex flex-col items-center text-gray-600 hover:text-orange-500 leading-none" title="Lacak Pesanan">
+                    <i class="fa-solid fa-truck-fast text-lg"></i>
+                    <span class="text-[9px] mt-0.5 hidden lg:block">Lacak</span>
+                </a>
+                <a href="index.html?openCart=1" class="relative flex flex-col items-center text-gray-600 hover:text-orange-500 leading-none" title="Keranjang">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                    <span id="header-cart-count" class="hidden absolute -top-1.5 -right-2 bg-orange-500 text-white text-[9px] font-bold min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center leading-none">0</span>
+                    <span class="text-[9px] mt-0.5 hidden lg:block">Keranjang</span>
+                </a>
+            </div>
         </div>
     </header>
 
@@ -133,7 +146,10 @@
                 <h3 class="font-bold text-sm text-gray-800">Jumlah Pembelian</h3>
                 <button onclick="closeBuyQtyModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-gray-500" id="p-name-in-modal"></p>
+            <div class="flex items-center gap-2.5">
+                <img id="buy-modal-img" class="w-12 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" src="">
+                <p class="text-xs text-gray-500" id="p-name-in-modal"></p>
+            </div>
             <div id="variant-picker-wrap" class="hidden space-y-1.5">
                 <p class="text-[10px] font-semibold text-gray-500">PILIH VARIASI</p>
                 <div id="variant-picker-options" class="grid grid-cols-2 gap-1.5"></div>
@@ -175,7 +191,7 @@
                 document.getElementById('img-dots').innerHTML = '';
                 return;
             }
-            track.innerHTML = productImages.map(url => `<div class="w-full h-full"><img src="${url}" class="w-full h-full object-cover" decoding="async" fetchpriority="high"></div>`).join('');
+            track.innerHTML = productImages.map(url => `<div class="w-full h-full flex items-center justify-center bg-gray-100"><img src="${url}" class="w-full h-full object-contain" decoding="async" fetchpriority="high"></div>`).join('');
             const showArrows = productImages.length > 1;
             document.getElementById('img-prev').classList.toggle('hidden', !showArrows);
             document.getElementById('img-next').classList.toggle('hidden', !showArrows);
@@ -431,6 +447,11 @@
 
         // Render pilihan varian di dalam popup jumlah beli (kalau produk punya varian).
         // Kalau produk tidak punya varian, bagian ini disembunyikan & pembeli langsung isi jumlah seperti biasa.
+        function productCoverImage() {
+            if (!currentProduct) return '';
+            return (Array.isArray(currentProduct.image_urls) && currentProduct.image_urls[0]) || currentProduct.image_url || '';
+        }
+
         function renderVariantPicker() {
             const wrap = document.getElementById('variant-picker-wrap');
             const options = document.getElementById('variant-picker-options');
@@ -440,6 +461,7 @@
                 wrap.classList.add('hidden');
                 options.innerHTML = '';
                 selectedVariant = null;
+                document.getElementById('buy-modal-img').src = productCoverImage();
                 return;
             }
 
@@ -450,6 +472,7 @@
                 if (idx !== -1) defaultIdx = idx;
             }
             selectedVariant = variants[defaultIdx];
+            document.getElementById('buy-modal-img').src = selectedVariant.image_url || productCoverImage();
             options.innerHTML = variants.map((v, i) => `
                 <button type="button" data-idx="${i}" onclick="pickVariant(${i})"
                     class="variant-pick-btn text-left border rounded-lg px-2.5 py-2 text-xs font-medium transition ${i === defaultIdx ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-400'}">
@@ -461,6 +484,7 @@
         function pickVariant(i) {
             const variants = currentProduct.variants || [];
             selectedVariant = variants[i];
+            document.getElementById('buy-modal-img').src = selectedVariant.image_url || productCoverImage();
             document.querySelectorAll('.variant-pick-btn').forEach((btn, idx) => {
                 btn.classList.toggle('border-gray-900', idx === i);
                 btn.classList.toggle('bg-gray-900', idx === i);
@@ -475,6 +499,7 @@
         function buyNowFromDetail() {
             if (!currentProduct) return;
             document.getElementById('p-name-in-modal').innerText = currentProduct.name;
+            document.getElementById('buy-modal-img').src = productCoverImage();
             document.getElementById('buy-qty-input').value = 1;
             renderVariantPicker();
             document.getElementById('buy-qty-modal').classList.remove('hidden');
@@ -499,6 +524,7 @@
             const qty = document.getElementById('buy-qty-input').value;
             addToCartCoreDetail(qty);
             closeBuyQtyModal();
+            renderHeaderCartCount();
             const label = selectedVariant ? `${currentProduct.name} (${selectedVariant.name})` : currentProduct.name;
             showToast(`${qty} pcs "${label}" ditambahkan ke keranjang.`);
         }
@@ -525,7 +551,20 @@
             buyNowFromDetail();
         }
 
+        function renderHeaderCartCount() {
+            const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            const totalQty = cart.reduce((sum, i) => sum + (i.qty || 0), 0);
+            const badge = document.getElementById('header-cart-count');
+            if (totalQty > 0) {
+                badge.classList.remove('hidden');
+                badge.innerText = totalQty > 99 ? '99+' : totalQty;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
         loadProduct();
+        renderHeaderCartCount();
     </script>
 </body>
 </html>

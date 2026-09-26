@@ -1150,6 +1150,11 @@
             openCheckout();
             window.history.replaceState({}, '', 'index.html');
         }
+        // Jika datang dari ikon "Lacak Pesanan" di halaman detail produk
+        if (urlParams.get('openTrack') === '1') {
+            openTrackOrder();
+            window.history.replaceState({}, '', 'index.html');
+        }
     </script>
 </body>
 </html>
