@@ -47,7 +47,7 @@
         <div id="product-content" class="hidden space-y-4">
             <!-- Gambar & Info Utama -->
             <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-                <div class="relative bg-gray-100 overflow-hidden lg:max-h-[560px]" id="product-image-wrap" style="aspect-ratio: 4 / 5;">
+                <div class="relative bg-gray-900 overflow-hidden h-72 lg:h-[480px]" id="product-image-wrap">
                     <div id="img-track" class="h-full"></div>
                     <button onclick="imgGo(-1)" id="img-prev" class="hidden absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-7 h-7 rounded-full items-center justify-center text-xs z-10"><i class="fa-solid fa-chevron-left"></i></button>
                     <button onclick="imgGo(1)" id="img-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-7 h-7 rounded-full items-center justify-center text-xs z-10"><i class="fa-solid fa-chevron-right"></i></button>
@@ -191,17 +191,12 @@
                 document.getElementById('img-dots').innerHTML = '';
                 return;
             }
-            track.innerHTML = productImages.map(url => `<div class="w-full h-full flex items-center justify-center bg-gray-100"><img src="${url}" class="w-full h-full object-contain" decoding="async" fetchpriority="high"></div>`).join('');
-
-            // Sesuaikan tinggi kotak foto dengan rasio asli gambar pertama, supaya gambar tampil
-            // sebesar mungkin tanpa terpotong DAN tanpa menyisakan ruang kosong di atas/bawah.
-            const probe = new Image();
-            probe.onload = () => {
-                if (probe.naturalWidth && probe.naturalHeight) {
-                    document.getElementById('product-image-wrap').style.aspectRatio = `${probe.naturalWidth} / ${probe.naturalHeight}`;
-                }
-            };
-            probe.src = productImages[0];
+            track.innerHTML = productImages.map(url => `
+                <div class="relative w-full h-full">
+                    <img src="${url}" class="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60" aria-hidden="true">
+                    <img src="${url}" class="relative w-full h-full object-contain" decoding="async" fetchpriority="high">
+                </div>
+            `).join('');
             const showArrows = productImages.length > 1;
             document.getElementById('img-prev').classList.toggle('hidden', !showArrows);
             document.getElementById('img-next').classList.toggle('hidden', !showArrows);
